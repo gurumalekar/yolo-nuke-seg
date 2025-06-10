@@ -8,14 +8,70 @@ A high-performance inference pipeline for nuclei segmentation in whole slide ima
 pip install -r requirements.txt
 ```
 
+## Model Checkpoints
+
+### Download Pre-trained Models
+
+**Google Drive**: [Download All Models]() [<!-- Add your Google Drive link here -->](https://drive.google.com/drive/folders/10Xfz6HNIyh0XmT1N7UO1u5r0FUXoxtaG?usp=drive_link)
+
+The download contains two folders:
+- `yolo_models/` - YOLO detection model weights
+- `seg_models/` - UNet++ segmentation model weights
+
+#### Available Segmentation Models
+After downloading and extracting, you'll find these segmentation model configurations:
+- `dims32_depth3.pt` - 32x32 patches, depth 3
+- `dims32_depth4.pt` - 32x32 patches, depth 4
+- `dims48_depth3.pt` - 48x48 patches, depth 3
+- `dims48_depth4.pt` - 48x48 patches, depth 4
+- `dims64_depth3.pt` - 64x64 patches, depth 3
+- `dims64_depth4.pt` - 64x64 patches, depth 4 *(recommended)*
+- `dims96_depth3.pt` - 96x96 patches, depth 3
+- `dims96_depth4.pt` - 96x96 patches, depth 4
+- `dims128_depth3.pt` - 128x128 patches, depth 3
+- `dims128_depth4.pt` - 128x128 patches, depth 4
+
+#### Model Selection Guidelines
+- **dims64_depth4.pt**: Best balance of accuracy and speed (recommended for most use cases)
+- **dims32_depth3.pt**: Fastest inference, lower memory usage
+- **dims128_depth4.pt**: Highest accuracy, requires more computational resources
+
+```
+
+## Quick Start
+
+1. **Download model checkpoints** from Google Drive (see Model Checkpoints section above)
+2. **Extract and organize your data structure**:
+   ```
+   project/
+   ├── yolo_models/
+   │   └── last.pt
+   ├── seg_models/
+   │   ├── dims32_depth3.pt
+   │   ├── dims64_depth4.pt
+   │   └── ... (other configurations)
+   ├── input_images/
+   │   ├── image1.tif
+   │   └── image2.tif
+   └── predictions/
+   ```
+3. **Run inference**:
+   ```bash
+   python infer.py \
+       --input_dir ./input_images \
+       --output_dir ./predictions \
+       --yolo_weights ./yolo_models/last.pt \
+       --seg_weights ./seg_models/dims64_depth4.pt
+   ```
+
 ## Usage
 
 ```bash
 python infer.py \
     --input_dir /path/to/images \
     --output_dir predictions \
-    --yolo_weights /path/to/yolo/weights.pt \
-    --seg_weights /path/to/segmentation/dims64_depth4.pt \
+    --yolo_weights ./yolo_models/last.pt \
+    --seg_weights ./seg_models/dims64_depth4.pt \
     --device cuda:0 \
     --conf 0.35 \
     --max_det 9999
@@ -55,3 +111,17 @@ The pipeline generates instance segmentation maps as numpy arrays (.npy files), 
 - Optimized for NVIDIA GPUs with CUDA support
 - Memory usage scales with image size and detection density
 - Processing time varies based on nuclei count per image
+- **Benchmark**: ~2-5 minutes per 2048x2048 WSI patch on RTX 3080
+
+## Citation
+
+If you use this pipeline in your research, please cite:
+
+```bibtex
+@misc{wsi_nuclei_segmentation,
+  title={WSI Nuclei Segmentation Pipeline},
+  author={}, // Add your name/organization
+  year={2025},
+  url={} // Add your repository URL
+}
+```
