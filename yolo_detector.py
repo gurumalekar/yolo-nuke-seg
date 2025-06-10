@@ -8,15 +8,9 @@ class YOLODetector:
         self.model = YOLO(weights_path).to(device)
     
     def detect(self, image_path, conf=0.35, max_det=2000):
-        if '7128' in str(image_path) or '7129' in str(image_path) or '7130' in str(image_path):
-            im = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
-            im = cv2.cvtColor(im, cv2.COLOR_RGB2BGR)
-            im = cv2.resize(im, (2048, 2048))
-            im = Image.fromarray(im)
-        else:
-            im = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
-            im = cv2.cvtColor(im, cv2.COLOR_RGB2BGR)
-            im = Image.fromarray(im)
+        im = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
+        im = cv2.cvtColor(im, cv2.COLOR_RGB2BGR)
+        im = Image.fromarray(im)
         
         true_w, true_h = Image.open(image_path).size
         w, h = im.size
