@@ -12,7 +12,7 @@ pip install -r requirements.txt
 
 ### Download Pre-trained Models
 
-**Google Drive**: [Download All Models]() [<!-- Add your Google Drive link here -->](https://drive.google.com/drive/folders/10Xfz6HNIyh0XmT1N7UO1u5r0FUXoxtaG?usp=drive_link)
+**Google Drive**: [Download All Models]() [https://drive.google.com/drive/folders/10Xfz6HNIyh0XmT1N7UO1u5r0FUXoxtaG?usp=drive_link]
 
 The download contains two folders:
 - `yolo_models/` - YOLO detection model weights
