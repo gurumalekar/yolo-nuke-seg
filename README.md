@@ -43,18 +43,18 @@ After downloading and extracting, you'll find these segmentation model configura
 1. **Download model checkpoints** from Google Drive (see Model Checkpoints section above)
 2. **Extract and organize your data structure**:
    ```
-   project/
-   ├── yolo_models/
-   │   └── last.pt
-   ├── seg_models/
-   │   ├── dims32_depth3.pt
-   │   ├── dims64_depth4.pt
-   │   └── ... (other configurations)
-   ├── input_images/
-   │   ├── image1.tif
-   │   └── image2.tif
-   └── predictions/
-   ```
+   project/ 
+   ├── yolo_models/ 
+   │   └── last.pt 
+   ├── seg_models/ 
+   │   ├── dims32_depth3.pt 
+   │   ├── dims64_depth4.pt 
+   │   └── ... (other configurations) 
+   ├── input_images/ 
+   │   ├── image1.tif 
+   │   └── image2.tif 
+   └── predictions/ 
+   ``` 
 3. **Run inference**:
    ```bash
    python infer.py \
