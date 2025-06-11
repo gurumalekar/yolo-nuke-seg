@@ -85,6 +85,7 @@ python infer.py \
 - **Target**: Individual nuclei detection and instance segmentation
 
 ## Pipeline Overview
+![image](infer_diagram.png) 
 
 The inference pipeline employs a two-stage approach:
 1. **Detection Stage**: YOLO model identifies potential nuclei regions
