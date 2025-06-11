@@ -100,7 +100,7 @@ The pipeline generates instance segmentation maps as numpy arrays (.npy files), 
 - Optimized for NVIDIA GPUs with CUDA support
 - Memory usage scales with image size and detection density
 - Processing time varies based on nuclei count per image
-- **Benchmark**: ~2-5 minutes per 2048x2048 WSI patch on RTX 3080
+- **Benchmark**: <1 minute per 2048x2048 WSI patch on RTX 4070
 
 ## Citation
 
