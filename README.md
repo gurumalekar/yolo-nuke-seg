@@ -39,7 +39,7 @@ After downloading and extracting, you'll find these segmentation model configura
 
 
 ## Quick Start
-```
+
 1. **Download model checkpoints** from Google Drive (see Model Checkpoints section above)
 2. **Extract and organize your data structure**:
 
