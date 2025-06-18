@@ -32,9 +32,8 @@ After downloading and extracting, you'll find these segmentation model configura
 - `dims128_depth4.pt` - 128x128 patches, depth 4
 
 #### Model Selection Guidelines
-- **dims64_depth4.pt**: Best balance of accuracy and speed (recommended for most use cases)
+- **dims64_depth3.pt**: Best balance of accuracy and speed (recommended for most use cases)
 - **dims32_depth3.pt**: Fastest inference, lower memory usage
-- **dims128_depth4.pt**: Highest accuracy, requires more computational resources
 
 
 
