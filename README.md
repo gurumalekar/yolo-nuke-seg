@@ -24,8 +24,8 @@ After downloading and extracting, you'll find these segmentation model configura
 - `dims32_depth4.pt` - 32x32 patches, depth 4
 - `dims48_depth3.pt` - 48x48 patches, depth 3
 - `dims48_depth4.pt` - 48x48 patches, depth 4
-- `dims64_depth3.pt` - 64x64 patches, depth 3
-- `dims64_depth4.pt` - 64x64 patches, depth 4 *(recommended)*
+- `dims64_depth3.pt` - 64x64 patches, depth 3 *(recommended)*
+- `dims64_depth4.pt` - 64x64 patches, depth 4 
 - `dims96_depth3.pt` - 96x96 patches, depth 3
 - `dims96_depth4.pt` - 96x96 patches, depth 4
 - `dims128_depth3.pt` - 128x128 patches, depth 3
