@@ -12,8 +12,7 @@ pip install -r requirements.txt
 
 ### Download Pre-trained Models
 
-**Google Drive**: [Download All Models]([https://drive.google.com/drive/folders/10Xfz6HNIyh0XmT1N7UO1u5r0FUXoxtaG?usp=drive_link](https://drive.google.com/file/d/1tlwUdb-3BIS0P1nM6wRHnYVPt01oV4p-/view?usp=sharing))]
-
+**Google Drive**: [Download All Models]([https://drive.google.com/file/d/1tlwUdb-3BIS0P1nM6wRHnYVPt01oV4p-/view?usp=sharing])
 The download contains two folders:
 - `yolo_models/` - YOLO detection model weights
 - `seg_models/` - UNet++ segmentation model weights
