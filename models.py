@@ -27,7 +27,7 @@ def load_segmentation_model(weights_path, device):
         decoder_channels=decoder_channels,
     ).to(device)
     
-    model.load_state_dict(torch.load(weights_path, map_location=device))
+    model.load_state_dict(torch.load(weights_path, map_location=device, weights_only=True))
     model.eval()
     
     return {'model': model, 'dims': dims, 'depth': depth}
