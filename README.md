@@ -48,22 +48,21 @@ After downloading and extracting, you'll find these segmentation model configura
    python infer.py \
        --input_dir ./input_images \
        --output_dir ./predictions \
-       --yolo_weights ./yolo_models/last.pt \
+       --yolo_weights ./yolo_models/best.pt \
        --seg_weights ./seg_models/dims64_depth4.pt
    ```
 
-## Usage
+4. **Run inference on WSI**:
+   ```bash
+   python wsi_inference.py \
+       --wsi_path /path/to/wsi.svs \ (ndpi, tiff etc.)
+       --output_path ./predictions \
+       --yolo_weights ./yolo_models/best.pt \
+       --seg_weights ./seg_models/dims64_depth4.pt \
+       --output_type polygon \ (choices: ['polygon', 'box', 'both']) 
+       --device cuda:0
+   ```
 
-```bash
-python infer.py \
-    --input_dir /path/to/images \
-    --output_dir predictions \
-    --yolo_weights ./yolo_models/last.pt \
-    --seg_weights ./seg_models/dims64_depth4.pt \
-    --device cuda:0 \
-    --conf 0.35 \
-    --max_det 9999
-```
 
 ## Dataset Specifications
 
