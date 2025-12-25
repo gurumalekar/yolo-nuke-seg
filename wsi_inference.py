@@ -2,6 +2,7 @@ import os
 import argparse
 import json
 import uuid
+import gc
 import numpy as np
 import openslide
 import cv2
@@ -136,6 +137,7 @@ class WSIInference:
         
         print(f"Processing tiles with {overlap}px overlap for deduplication...")
         pbar = tqdm(total=total_tiles, desc="Processing Tiles", ncols=80)
+        batch_count = 0
         
         for (tx, ty), (sx, sy, sw, sh), (tw, th) in tile_gen:
             try:
@@ -152,7 +154,13 @@ class WSIInference:
                     all_features.extend(new_features)
                     pbar.update(len(tile_batch))
                     tile_batch = []
-                    coords_batch = [] 
+                    coords_batch = []
+                    batch_count += 1
+                    
+                    if batch_count % 50 == 0:
+                        gc.collect()
+                        if torch.cuda.is_available():
+                            torch.cuda.empty_cache()
             except Exception as e:
                 print(f"Error reading tile at {tx},{ty}: {e}")
                 continue
