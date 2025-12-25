@@ -60,22 +60,8 @@ class ImageProcessor:
         return SegmentationResult(segmentation_map)
     
     def process_image_batch(self, image_list, conf, max_det, verbose=False):
-        """
-        Process multiple images using batched YOLO inference.
-        
-        Args:
-            image_list: List of numpy arrays (RGB images)
-            conf: Confidence threshold
-            max_det: Maximum detections per image
-            verbose: Show progress bar
-        
-        Returns:
-            List of SegmentationResult objects
-        """
-        # Run batched YOLO detection
         batch_boxes = self.yolo_detector.detect_batch(image_list, conf, max_det)
         
-        # Process each image with its boxes
         results = []
         for idx, (im, boxes) in enumerate(zip(image_list, batch_boxes)):
             boxes = np.array(boxes)
@@ -88,7 +74,6 @@ class ImageProcessor:
             counter = 1
             iterator = boxes[:, 1:-1]
             
-            # Only show progress for verbose mode and skip for batch processing
             for box in iterator:
                 x1, y1, x2, y2 = box
                 x1, y1, x2, y2 = x1 - 4, y1 - 4, x2 + 4, y2 + 4

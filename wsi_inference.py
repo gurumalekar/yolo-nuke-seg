@@ -10,9 +10,52 @@ from pathlib import Path
 from tqdm import tqdm
 from shapely.geometry import Polygon as shape_Polygon, box
 from shapely.ops import orient
+from shapely.strtree import STRtree
+from multiprocessing import Pool, cpu_count
 from models import load_segmentation_model
 from yolo_detector import YOLODetector
 from image_processor import ImageProcessor
+
+def _process_chunk_for_deduplication(args):
+    chunk_start, chunk_end, polygons, tree, iou_threshold, distance_threshold = args
+    duplicates = []
+    
+    for i in range(chunk_start, chunk_end):
+        if i in duplicates:
+            continue
+        
+        poly_i = polygons[i]
+        
+        search_area = poly_i.buffer(distance_threshold)
+        candidates = tree.query(search_area)
+        
+        for poly_j in candidates:
+            try:
+                j = polygons.index(poly_j)
+            except ValueError:
+                continue
+            
+            if j <= i or j in duplicates:
+                continue
+            
+            try:
+                intersection = poly_i.intersection(poly_j).area
+                union = poly_i.union(poly_j).area
+                
+                if union > 0:
+                    iou = intersection / union
+                    
+                    if iou > iou_threshold:
+                        if poly_i.area >= poly_j.area:
+                            duplicates.append(j)
+                        else:
+                            duplicates.append(i)
+                            break
+            except Exception:
+                continue
+    
+    return duplicates
+
 class WSIInference:
     def __init__(self, wsi_path, yolo_weights, seg_weights, device='cuda:0', conf=0.35, max_det=9999):
         self.wsi_path = Path(wsi_path)
@@ -22,7 +65,7 @@ class WSIInference:
         print(f"Loading segmentation model from {seg_weights}...")
         dims_data = load_segmentation_model(seg_weights, self.device)
         self.seg_model = dims_data['model']
-        self.patch_size = dims_data['dims'] # Model input size
+        self.patch_size = dims_data['dims']
         self.depth = dims_data['depth']
         
         print(f"Loading YOLO model from {yolo_weights}...")
@@ -80,7 +123,7 @@ class WSIInference:
         overlap = 256 
         tile_batch = []
         coords_batch = []
-        all_features = []  # Collect all features before deduplication
+        all_features = []
         
         w, h = self.slide.dimensions
         target_w = int(w * self.scale_factor)
@@ -114,7 +157,6 @@ class WSIInference:
                 print(f"Error reading tile at {tx},{ty}: {e}")
                 continue
 
-        # Process remaining tiles
         if tile_batch:
             new_features = self.process_batch(tile_batch, coords_batch, output_type, (target_w, target_h))
             all_features.extend(new_features)
@@ -122,12 +164,10 @@ class WSIInference:
         
         pbar.close()
         
-        # Deduplicate features
         print(f"Total features before deduplication: {len(all_features)}")
         deduplicated_features = self.deduplicate_polygons(all_features)
         print(f"Total features after deduplication: {len(deduplicated_features)}")
         
-        # Write deduplicated features to file
         print(f"Writing output to {output_path}...")
         with open(output_path, 'w') as f:
             f.write('{"type":"FeatureCollection","features":[')
@@ -144,7 +184,6 @@ class WSIInference:
         target_w, target_h = global_size
         batch_features = []
         
-        # Use batched YOLO inference for all tiles at once
         try:
             results = self.processor.process_image_batch(tiles, self.conf, self.max_det, verbose=False)
             
@@ -204,7 +243,7 @@ class WSIInference:
                 contours, _ = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                 for contour in contours:
                     if len(contour) < 3: continue
-                    epsilon = 0.001 * cv2.arcLength(contour, True) # Low epsilon for minimal loss but cleaner vertices
+                    epsilon = 0.001 * cv2.arcLength(contour, True)
                     contour = cv2.approxPolyDP(contour, epsilon, True)
                     
                     if len(contour) < 3: continue
@@ -216,16 +255,14 @@ class WSIInference:
                     try:
                         poly = shape_Polygon(coords)
                         
-                        # Validate and fix polygon
                         if not poly.is_valid:
-                            poly = poly.buffer(0)  # Fix topology issues
+                            poly = poly.buffer(0)
                         
                         if not poly.is_valid or poly.is_empty:
                             continue
                             
                         poly = orient(poly, sign=1.0)
                         if poly.exterior:
-                            # Keep as floats, round to 1 decimal place for cleaner output
                             cleaned_coords = [[round(x, 1), round(y, 1)] for x, y in poly.exterior.coords]
                             if len(cleaned_coords) < 3: continue
                             features.append({
@@ -247,75 +284,47 @@ class WSIInference:
         return features
     
     def deduplicate_polygons(self, features, iou_threshold=0.5, distance_threshold=20):
-        """
-        Remove duplicate polygons detected in overlapping tile regions.
-        
-        Args:
-            features: List of GeoJSON feature dictionaries
-            iou_threshold: IoU threshold for considering polygons as duplicates (default: 0.5)
-            distance_threshold: Maximum centroid distance in pixels to check for duplicates (default: 20)
-        
-        Returns:
-            Deduplicated list of features
-        """
         if len(features) == 0:
             return features
-        
-        # Extract polygons and compute centroids
+        print(f"Deduplicating {len(features)} features using spatial indexing...")
         polygons = []
-        centroids = []
         for feat in features:
             coords = feat['geometry']['coordinates'][0]
             poly = shape_Polygon(coords)
             polygons.append(poly)
-            centroid = poly.centroid
-            centroids.append((centroid.x, centroid.y))
         
-        # Track which polygons to keep
+        print("Building spatial index...")
+        tree = STRtree(polygons)
+        
         to_keep = [True] * len(features)
         
-        # Compare each polygon with others
-        for i in range(len(features)):
-            if not to_keep[i]:
-                continue
-                
-            cx_i, cy_i = centroids[i]
-            
-            for j in range(i + 1, len(features)):
-                if not to_keep[j]:
-                    continue
-                
-                cx_j, cy_j = centroids[j]
-                
-                # Quick check: if centroids are far apart, skip
-                distance = np.sqrt((cx_i - cx_j)**2 + (cy_i - cy_j)**2)
-                if distance > distance_threshold:
-                    continue
-                
-                # Compute IoU
-                try:
-                    intersection = polygons[i].intersection(polygons[j]).area
-                    union = polygons[i].union(polygons[j]).area
-                    
-                    if union > 0:
-                        iou = intersection / union
-                        
-                        # If IoU is high, they're duplicates - keep the larger one
-                        if iou > iou_threshold:
-                            if polygons[i].area >= polygons[j].area:
-                                to_keep[j] = False
-                            else:
-                                to_keep[i] = False
-                                break  # Move to next i since this one is marked for removal
-                except Exception:
-                    continue
+        num_processes = max(1, cpu_count() // 2)
+        print(f"Using {num_processes} processes for deduplication...")
         
-        # Return only features marked to keep
+        chunk_size = max(100, len(features) // (num_processes * 4))
+        chunks = []
+        for i in range(0, len(features), chunk_size):
+            chunks.append((i, min(i + chunk_size, len(features))))
+        
+        with Pool(num_processes) as pool:
+            args = [(chunk_start, chunk_end, polygons, tree, iou_threshold, distance_threshold) 
+                    for chunk_start, chunk_end in chunks]
+            
+            results = list(tqdm(
+                pool.imap(_process_chunk_for_deduplication, args),
+                total=len(chunks),
+                desc="Deduplication chunks"
+            ))
+        
+        for chunk_duplicates in results:
+            for idx in chunk_duplicates:
+                to_keep[idx] = False
+        
         deduplicated = [feat for idx, feat in enumerate(features) if to_keep[idx]]
         
         removed_count = len(features) - len(deduplicated)
         if removed_count > 0:
-            print(f"Removed {removed_count} duplicate polygons")
+            print(f"Removed {removed_count} duplicate polygons ({removed_count/len(features)*100:.1f}%)")
         
         return deduplicated
     

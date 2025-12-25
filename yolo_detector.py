@@ -15,7 +15,6 @@ class YOLODetector:
             im = Image.fromarray(im)
             true_w, true_h = Image.open(image_source).size
         elif isinstance(image_source, np.ndarray):
-            # Assumes RGB input if numpy array, convert to PIL
             im = Image.fromarray(image_source)
             true_w, true_h = im.size
         elif isinstance(image_source, Image.Image):
@@ -38,36 +37,22 @@ class YOLODetector:
         return boxes
     
     def detect_batch(self, image_list, conf=0.35, max_det=2000):
-        """
-        Run batched YOLO inference on multiple images.
-        
-        Args:
-            image_list: List of numpy arrays (RGB images)
-            conf: Confidence threshold
-            max_det: Maximum detections per image
-        
-        Returns:
-            List of boxes (one per image), each in the same format as detect()
-        """
         if len(image_list) == 0:
             return []
         
-        # Convert numpy arrays to PIL Images and get dimensions
         pil_images = []
         true_sizes = []
         
         for img_np in image_list:
             im = Image.fromarray(img_np)
             pil_images.append(im)
-            true_sizes.append(im.size)  # (width, height)
+            true_sizes.append(im.size)
         
-        # Get max dimensions and pad to 32
         max_w = max(size[0] for size in true_sizes)
         max_h = max(size[1] for size in true_sizes)
         max_w = max_w + (32 - max_w % 32) if max_w % 32 != 0 else max_w
         max_h = max_h + (32 - max_h % 32) if max_h % 32 != 0 else max_h
         
-        # Run batch prediction
         results = self.model.predict(
             pil_images, 
             conf=conf, 
@@ -76,17 +61,14 @@ class YOLODetector:
             verbose=False
         )
         
-        # Process results for each image
         batch_boxes = []
         for idx, result in enumerate(results):
             boxes = result.boxes.xyxyn.cpu().numpy()
             true_w, true_h = true_sizes[idx]
             
-            # Scale normalized boxes to pixel coordinates
             boxes = boxes * true_w
             boxes = boxes.astype(int)
             
-            # Add dummy confidence columns
             if boxes.shape[0] > 0:
                 boxes = np.hstack([np.ones((boxes.shape[0], 1)), boxes, np.ones((boxes.shape[0], 1))])
             
